@@ -1,0 +1,14 @@
+- name: Generate Keystore
+  run: |
+    mkdir -p app/keys
+
+    keytool -genkeypair \
+      -v \
+      -keystore app/keys/selaura.jks \
+      -alias launcher \
+      -keyalg RSA \
+      -keysize 2048 \
+      -validity 36500 \
+      -storepass pass&pass123 \
+      -keypass pass&pass123 \
+      -dname "CN=Selaura, OU=Android, O=GitHub, L=Dhaka, ST=Khulna, C=BD"
