@@ -1,0 +1,93 @@
+name: Build Selaura Launcher
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build-launcher:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Java
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: gradle
+
+      # 3. Make Gradle executable
+      - name: Grant Execute Permission
+        run: chmod +x ./gradlew
+
+      # 4. Check keystore
+      - name: Check Keystore
+        run: |
+          if [ ! -f "app/selaura.jks" ]; then
+            echo "❌ Keystore not found!"
+            echo "Expected file: app/selaura.jks"
+            exit 1
+          fi
+
+          echo "✅ Keystore found"
+
+      # 5. Build Release APK
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      # 6. Find generated APK
+      - name: Find APK
+        id: find_apk
+        run: |
+          APK_PATH=$(find . -type f -path "*/build/outputs/apk/release/*.apk" | head -n 1)
+
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ No release APK found!"
+            exit 1
+          fi
+
+          echo "✅ APK found:"
+          echo "$APK_PATH"
+
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      # 7. Rename APK
+      - name: Prepare APK
+        id: prepare_apk
+        run: |
+          mkdir -p release
+
+          cp "${{ steps.find_apk.outputs.apk_path }}" \
+             "release/Selaura-Launcher-${{ github.run_number }}.apk"
+
+          echo "apk_path=release/Selaura-Launcher-${{ github.run_number }}.apk" \
+             >> "$GITHUB_OUTPUT"
+
+      # 8. Upload APK to GitHub Actions
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Selaura-Launcher-${{ github.run_number }}
+          path: ${{ steps.prepare_apk.outputs.apk_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      # 9. Show build information
+      - name: Build Summary
+        run: |
+          echo "======================================"
+          echo "       SELAURA LAUNCHER BUILD"
+          echo "======================================"
+          echo "Build number : ${{ github.run_number }}"
+          echo "Commit       : ${{ github.sha }}"
+          echo "Branch       : ${{ github.ref_name }}"
+          echo "APK          : Selaura-Launcher-${{ github.run_number }}.apk"
+          echo "======================================"
