@@ -10,9 +10,9 @@ plugins {
 android {
     signingConfigs {
         create("launcher") {
-            storeFile = file("C:\\Users\\Zeyro\\OneDrive\\Desktop\\keys\\selaura.jks")
-            storePassword = "391720pass"
-            keyPassword = "391720pass"
+            storeFile = file("selaura.jks")
+            storePassword = "pass@pass1"
+            keyPassword = "pass@pass1"
             keyAlias = "launcher"
         }
     }
